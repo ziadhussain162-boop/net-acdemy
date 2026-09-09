@@ -569,13 +569,39 @@ async function loadUnitAudio(audioPath) {
     const audioPlayer = document.getElementById('unit-audio-player');
     const loadingMsg = document.getElementById('audio-loading-msg');
     loadingMsg.style.display = 'block';
+    loadingMsg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading audio... 0%';
 
     try {
         const response = await fetch(audioPath);
         if (!response.ok) throw new Error('Audio fetch failed: ' + response.status);
-        const blob = await response.blob();
-        currentAudioBlobUrl = URL.createObjectURL(blob);
-        audioPlayer.src = currentAudioBlobUrl;
+
+        const totalBytes = Number(response.headers.get('Content-Length')) || 0;
+
+        // نقرأ الملف على أجزاء (Stream) عشان نقدر نحسب نسبة التحميل الحقيقية
+        // ونوريها للطالب، بدل ما يفضل شايف "Loading..." ثابتة من غير أي مؤشر
+        if (response.body && totalBytes > 0) {
+            const reader = response.body.getReader();
+            const chunks = [];
+            let receivedBytes = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                receivedBytes += value.length;
+                const pct = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
+                loadingMsg.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Loading audio... ${pct}%`;
+            }
+
+            const blob = new Blob(chunks);
+            currentAudioBlobUrl = URL.createObjectURL(blob);
+            audioPlayer.src = currentAudioBlobUrl;
+        } else {
+            // فولباك: لو السيرفر مبعتش Content-Length، منقدرش نحسب نسبة حقيقية
+            const blob = await response.blob();
+            currentAudioBlobUrl = URL.createObjectURL(blob);
+            audioPlayer.src = currentAudioBlobUrl;
+        }
     } catch (err) {
         // فولباك: لو الـ fetch فشل لأي سبب (مثلاً فتح الملف مباشرة بدون سيرفر محلي)
         // نرجع للطريقة العادية بدل ما الصوت يفضل مش شغال خالص
@@ -663,7 +689,7 @@ function renderUnitDetails() {
 
         return `
             <div class="${classList}" onclick="openLesson(${i})">
-                <div><strong>${l.title}</strong></div>
+                <div><span class="lesson-number mono">Lesson ${i + 1}</span><strong>${l.title}</strong></div>
                 ${statusMarkup}
             </div>
         `;
