@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Net Academy // Dynamic Learning Platform</title>
+    <!-- Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- AUTHENTICATION FORM OVERLAY -->
+<div id="login-modal" class="login-overlay">
+    <div class="login-box">
+        <h2 id="modal-title" class="mono" style="color: var(--primary-accent); margin-bottom: 6px; text-align: center;">Create Account</h2>
+        <p id="modal-subtitle" style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px; text-align: center;">First-time student? Register your details below.</p>
+        
+        <form id="registrationForm" onsubmit="handleAuthSubmit(event)" novalidate>
+            <!-- Full Name -->
+            <div class="form-group" id="name-group">
+                <label for="student-name" class="mono"><i class="fa-solid fa-user"></i> Full Name</label>
+                <input type="text" id="student-name" class="input-field" placeholder="John Doe" autocomplete="name" required />
+            </div>
+
+            <!-- Email Address -->
+            <div class="form-group">
+                <label for="student-email" class="mono"><i class="fa-solid fa-envelope"></i> Email Address</label>
+                <input type="email" id="student-email" class="input-field" placeholder="student@academy.com" autocomplete="email" required />
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+                <label for="student-pass" class="mono"><i class="fa-solid fa-key"></i> Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="student-pass" class="input-field" placeholder="••••••••" autocomplete="new-password" required />
+                    <button type="button" class="toggle-pass-btn" onclick="togglePasswordVisibility()">
+                        <i id="pass-icon" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <span id="pass-error" class="error-msg mono">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Must be at least 8 chars, contain upper & lower case letters, numbers & symbols (!@#$%^&*).
+                </span>
+            </div>
+
+            <!-- Branch Selection -->
+            <div class="form-group" id="branch-group">
+                <label for="student-branch" class="mono"><i class="fa-solid fa-building-columns"></i> Academy Branch</label>
+                <select id="student-branch" class="input-field" style="background: #0d1117; color: #fff;" required>
+                    <option value="" disabled selected>Select Academy Branch...</option>
+                    <option value="Cairo Branch">Cairo Branch</option>
+                    <option value="Giza Branch">Giza Branch</option>
+                    <option value="Alexandria Branch">Alexandria Branch</option>
+                    <option value="Dakahlia Branch">Dakahlia Branch</option>
+                    <option value="Red Sea Branch">Red Sea Branch</option>
+                    <option value="Beheira Branch">Beheira Branch</option>
+                    <option value="Fayoum Branch">Fayoum Branch</option>
+                    <option value="Gharbia Branch">Gharbia Branch</option>
+                    <option value="Ismailia Branch">Ismailia Branch</option>
+                    <option value="Monufia Branch">Monufia Branch</option>
+                    <option value="Minya Branch">Minya Branch</option>
+                    <option value="Qalyubia Branch">Qalyubia Branch</option>
+                    <option value="New Valley Branch">New Valley Branch</option>
+                    <option value="Suez Branch">Suez Branch</option>
+                    <option value="Aswan Branch">Aswan Branch</option>
+                    <option value="Assiut Branch">Assiut Branch</option>
+                    <option value="Beni Suef Branch">Beni Suef Branch</option>
+                    <option value="Port Said Branch">Port Said Branch</option>
+                    <option value="Damietta Branch">Damietta Branch</option>
+                    <option value="Sharkia Branch">Sharkia Branch</option>
+                    <option value="South Sinai Branch">South Sinai Branch</option>
+                    <option value="Kafr El Sheikh Branch">Kafr El Sheikh Branch</option>
+                    <option value="Matrouh Branch">Matrouh Branch</option>
+                    <option value="Qena Branch">Qena Branch</option>
+                    <option value="North Sinai Branch">North Sinai Branch</option>
+                    <option value="Sohag Branch">Sohag Branch</option>
+                    <option value="Luxor Branch">Luxor Branch</option>
+                </select>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn mono" style="margin-top: 10px;">Register & Enter</button>
+        </form>
+
+        <div class="mode-switch-text">
+            <span id="mode-question">Already registered?</span> 
+            <span id="mode-toggle-btn" class="mode-switch-btn" onclick="toggleAuthMode()">Sign in here</span>
+        </div>
+    </div>
+</div>
+
+<div class="bg-grid"></div>
+<div class="bg-hex-overlay"></div>
+<div class="scanlines"></div>
+
+<header>
+    <div class="brand mono">
+        <div class="brand-dot"></div>
+        Net Academy Pro
+    </div>
+    <div class="user-info mono" id="user-display" style="display: none;">
+        <i class="fa-solid fa-user-circle"></i> <span id="current-user-name"></span> (<span id="current-user-branch"></span>)
+        <button class="filter-btn" onclick="logoutStudent()" style="padding: 4px 10px; font-size: 0.75rem; margin-left: 10px;">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+    </div>
+</header>
+
+<div class="container">
+    
+    <!-- DASHBOARD VIEW -->
+    <div id="home-view">
+        <div class="hero">
+            <h1 class="mono">Advanced Networking Curriculum</h1>
+            <p>Complete all 5 sequential lessons in Unit 09 to unlock the dynamic stage exams generated directly from the curriculum.</p>
+        </div>
+
+        <div class="controls-bar mono">
+            <button class="filter-btn active" onclick="filterUnits('all', this)">All Units (8)</button>
+            <button class="filter-btn" onclick="filterUnits('group1', this)">Units 09-12 (4)</button>
+            <button class="filter-btn" onclick="filterUnits('group2', this)">Units 13-16 (4)</button>
+        </div>
+
+        <div id="units-grid" class="grid"></div>
+
+        <!-- LEADERBOARD SECTION -->
+        <div class="leaderboard-section">
+            <h3 class="mono" style="color: var(--accent-amber); margin-bottom: 15px;">
+                <i class="fa-solid fa-trophy"></i> Hall of Fame / Leaderboard
+            </h3>
+
+            <div class="leaderboard-tabs mono">
+                <div id="lb-tab-unit" class="lb-tab active" onclick="switchLeaderboardTab('unit')">By Unit</div>
+                <div id="lb-tab-overall" class="lb-tab" onclick="switchLeaderboardTab('overall')">Overall Ranking</div>
+            </div>
+
+            <!-- By Unit View: طالب بيدخل السطر لما يخلص الـ 3 مراحل (Easy+Medium+Hard) بتاعت اليونيت -->
+            <table class="data-table" id="lb-table-unit">
+                <thead>
+                    <tr>
+                        <th><i class="fa-solid fa-hashtag"></i> Rank</th>
+                        <th><i class="fa-solid fa-user"></i> Student Name</th>
+                        <th><i class="fa-solid fa-building-columns"></i> Branch</th>
+                        <th><i class="fa-solid fa-layer-group"></i> Unit</th>
+                        <th><i class="fa-solid fa-bullseye"></i> Avg. Score</th>
+                        <th><i class="fa-solid fa-stopwatch"></i> Total Time</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body-unit">
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No unit fully completed yet. Pass all 3 stages (Easy, Medium, Hard) of any unit to appear here!</td></tr>
+                </tbody>
+            </table>
+
+            <!-- Overall View: سطر واحد ثابت لكل طالب، بيتحدّث كل ما يخلص يونيت جديد -->
+            <table class="data-table" id="lb-table-overall" style="display: none;">
+                <thead>
+                    <tr>
+                        <th><i class="fa-solid fa-hashtag"></i> Rank</th>
+                        <th><i class="fa-solid fa-user"></i> Student Name</th>
+                        <th><i class="fa-solid fa-building-columns"></i> Branch</th>
+                        <th><i class="fa-solid fa-layer-group"></i> Units Completed</th>
+                        <th><i class="fa-solid fa-bullseye"></i> Overall Avg. Score</th>
+                        <th><i class="fa-solid fa-stopwatch"></i> Total Time</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body-overall">
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No students have completed a full unit yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- UNIT VIEW -->
+    <div id="unit-view" class="view-section">
+        <button class="btn btn-outline mono" onclick="showHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+        <div>
+            <span class="unit-tag mono" id="unit-badge">Unit 09</span>
+            <h2 id="unit-title" style="font-size: 1.8rem;"></h2>
+        </div>
+        <p id="unit-desc" style="color: var(--text-muted); margin-top: 6px;"></p>
+
+        <!-- AUDIO EXPLANATION PLAYER (per-unit) -->
+        <div id="unit-audio-box" class="audio-box" style="display: none;">
+            <div class="audio-box-label mono"><i class="fa-solid fa-headphones"></i> Audio Explanation</div>
+            <div class="custom-audio-player">
+                <button class="audio-play-btn" id="audio-play-btn" onclick="toggleAudioPlay()">
+                    <i class="fa-solid fa-play" id="audio-play-icon"></i>
+                </button>
+                <div class="audio-progress-wrap">
+                    <div class="audio-progress-bar" id="audio-progress-bar" onclick="seekAudio(event)">
+                        <div class="audio-progress-fill" id="audio-progress-fill"></div>
+                        <div class="audio-progress-handle" id="audio-progress-handle"></div>
+                    </div>
+                    <div class="audio-time-row mono">
+                        <span id="audio-current-time">0:00</span>
+                        <span id="audio-duration">0:00</span>
+                    </div>
+                </div>
+            </div>
+            <div id="audio-loading-msg" class="mono" style="display:none; font-size:0.75rem; color: var(--text-muted); margin-top: 8px;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Loading audio...
+            </div>
+            <audio id="unit-audio-player" preload="metadata"></audio>
+        </div>
+
+        <h3 class="mono" style="font-size: 0.9rem; margin-top: 30px; color: var(--text-muted);">// Unit Lessons (Required for exam unlock):</h3>
+        <div id="lessons-container" class="lessons-list"></div>
+
+        <div id="quiz-locked-box" class="quiz-locked-notice mono">
+            <i class="fa-solid fa-lock"></i> <span id="quiz-progress-status">Complete all 5 lessons to unlock the stage exams.</span>
+        </div>
+
+        <div id="quiz-activation-wrapper">
+            <h3 class="mono" style="font-size: 0.9rem; color: var(--primary-accent);">// Select Examination Stage:</h3>
+            <div class="difficulty-selector mono">
+                <div id="diff-easy" class="diff-btn selected" onclick="selectDifficulty('easy')">Stage 1: Easy (20 Qs)</div>
+                <div id="diff-medium" class="diff-btn locked" onclick="selectDifficulty('medium')">Stage 2: Medium (20 Qs) <i class="fa-solid fa-lock"></i></div>
+                <div id="diff-hard" class="diff-btn locked" onclick="selectDifficulty('hard')">Stage 3: Hard (10 Qs) <i class="fa-solid fa-lock"></i></div>
+            </div>
+
+            <button class="btn mono" onclick="startQuiz()"><i class="fa-solid fa-play"></i> Start Dynamic Exam</button>
+        </div>
+    </div>
+
+    <!-- LESSON READING VIEW -->
+    <div id="lesson-view" class="view-section">
+        <button class="btn btn-outline mono" onclick="showUnitView()"><i class="fa-solid fa-arrow-left"></i> Back to Unit</button>
+        <h2 id="lesson-title" style="font-size: 1.8rem; color: var(--primary-accent);"></h2>
+        <div id="lesson-content" class="lesson-text-block" style="line-height: 1.8; color: #cbd5e1; margin: 20px 0;"></div>
+        
+        <button id="complete-btn" class="btn mono" style="margin-top: 20px;" onclick="completeCurrentLesson()">
+            Mark Lesson as Completed
+        </button>
+    </div>
+
+    <!-- QUIZ VIEW WITH TIMER -->
+    <div id="quiz-view" class="view-section">
+        <button class="btn btn-outline mono" onclick="abortQuiz()"><i class="fa-solid fa-xmark"></i> Cancel Exam</button>
+        
+        <div class="quiz-header">
+            <h2 id="quiz-title"></h2>
+            <div id="timer-display" class="timer-box mono"><i class="fa-solid fa-clock"></i> Time: 00:00</div>
+        </div>
+
+        <div id="quiz-questions-container"></div>
+        <button class="btn mono" onclick="submitQuiz()"><i class="fa-solid fa-paper-plane"></i> Submit Answers</button>
+        <div id="quiz-result" class="result-box mono"></div>
+    </div>
+
+</div>
+
+<!-- Firebase (Realtime Database) - قاعدة بيانات مشتركة لكل الطلبة -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import {
+        getDatabase, ref, get, set, update, push, onValue
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAQH4iY5DXjCBHkH_rLIjUJIN3YalDKnSs",
+        authDomain: "net-academy-pro.firebaseapp.com",
+        databaseURL: "https://net-academy-pro-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "net-academy-pro",
+        storageBucket: "net-academy-pro.firebasestorage.app",
+        messagingSenderId: "146054786807",
+        appId: "1:146054786807:web:dbc57bbb94c3a072386df2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // نعرّض أدوات Firebase على window عشان script.js (سكريبت عادي مش module) يقدر يستخدمها
+    window.fbDB = db;
+    window.fbRef = ref;
+    window.fbGet = get;
+    window.fbSet = set;
+    window.fbUpdate = update;
+    window.fbPush = push;
+    window.fbOnValue = onValue;
+
+    // نطلق حدث عشان script.js يعرف إن Firebase بقى جاهز يشتغل بيه
+    window.dispatchEvent(new Event('firebase-ready'));
+</script>
+<script src="script.js"></script>
+</body>
+</html>
