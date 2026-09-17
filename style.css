@@ -518,6 +518,57 @@ header {
     border-bottom: 1px solid var(--border-color);
 }
 
+/* Feedback Section */
+.feedback-section {
+    margin-top: 40px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 24px;
+}
+
+.feedback-section textarea.input-field {
+    resize: vertical;
+    min-height: 110px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    line-height: 1.5;
+}
+
+.feedback-section .btn { width: auto; padding: 12px 28px; }
+
+.star-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.star-icon {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.star-icon:hover,
+.star-icon.filled {
+    color: var(--accent-amber);
+}
+
+#feedback-status.success {
+    color: var(--success);
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--success);
+    border-radius: 6px;
+    padding: 12px 16px;
+}
+
+#feedback-status.error {
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+    padding: 12px 16px;
+}
+
 .lb-tab {
     padding: 8px 18px;
     font-size: 0.8rem;
@@ -544,6 +595,20 @@ header {
     margin-bottom: 12px;
     border-radius: 4px;
 }
+
+/* إخفاء واجهة Google Translate الافتراضية (الشريط البرتقالي وربط الـ iframe)
+   عشان نستخدم زرارنا المخصص بس ومتفضلش الصفحة بتتزحزح لتحت */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-gadget-icon,
+#goog-gt-tt, .goog-te-balloon-frame,
+.goog-tooltip, .goog-tooltip:hover,
+.goog-text-highlight {
+    display: none !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+body { top: 0 !important; position: static !important; }
+.goog-te-gadget { height: 0; overflow: hidden; font-size: 0 !important; }
 
 /* Audio Explanation Player */
 .audio-box {

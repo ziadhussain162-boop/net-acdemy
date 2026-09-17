@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel // Net Academy Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+        .admin-login-box {
+            max-width: 420px; margin: 100px auto; background: var(--panel-bg);
+            border: 1px solid var(--border-color); border-radius: 12px; padding: 35px;
+            box-shadow: 0 0 35px var(--primary-glow);
+        }
+        .admin-stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px; margin-bottom: 30px;
+        }
+        .admin-stat-card {
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 20px;
+        }
+        .admin-stat-card .stat-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .admin-stat-card .stat-value { font-size: 2rem; font-weight: 700; color: var(--primary-accent); }
+        .admin-search { width: 100%; margin-bottom: 16px; }
+        .delete-btn {
+            background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid var(--danger);
+            padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: 700;
+        }
+        .delete-btn:hover { background: var(--danger); color: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-hex-overlay"></div>
+<div class="scanlines"></div>
+
+<header>
+    <div class="brand mono">
+        <div class="brand-dot"></div>
+        Net Academy Pro <span style="color: var(--accent-amber); margin-left: 8px;">// ADMIN</span>
+    </div>
+    <a href="index.html" class="filter-btn mono" style="text-decoration:none; padding: 6px 14px; font-size:0.78rem;">
+        <i class="fa-solid fa-arrow-left"></i> Back to Site
+    </a>
+</header>
+
+<!-- شاشة تسجيل الدخول -->
+<div id="admin-login-view" class="admin-container">
+    <div class="admin-login-box">
+        <h2 class="mono" style="color: var(--primary-accent); text-align: center; margin-bottom: 8px;">
+            <i class="fa-solid fa-lock"></i> Admin Access
+        </h2>
+        <p id="admin-login-subtitle" class="mono" style="color: var(--text-muted); font-size: 0.8rem; text-align:center; margin-bottom: 24px;">
+            Sign in with your admin account to continue.
+        </p>
+        <div class="form-group">
+            <label class="mono">Admin Email</label>
+            <input type="email" id="admin-email-input" class="input-field" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+            <label class="mono">Admin Password</label>
+            <input type="password" id="admin-pass-input" class="input-field" placeholder="••••••••">
+        </div>
+        <button class="btn mono" style="margin-top: 10px;" onclick="attemptAdminLogin()">
+            <i class="fa-solid fa-right-to-bracket"></i> Enter Control Panel
+        </button>
+    </div>
+</div>
+
+<!-- لوحة التحكم -->
+<div id="admin-dashboard-view" class="admin-container" style="display: none;">
+    <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+            <div class="stat-label mono">Total Site Visits</div>
+            <div class="stat-value mono" id="stat-total-visits">-</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="stat-label mono">Registered Students</div>
+            <div class="stat-value mono" id="stat-total-students">-</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="stat-label mono">Units Fully Completed</div>
+            <div class="stat-value mono" id="stat-total-completions">-</div>
+        </div>
+    </div>
+
+    <button class="filter-btn mono" style="margin-bottom: 16px; padding: 6px 14px; font-size: 0.78rem;" onclick="logoutAdmin()">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+
+    <input type="text" id="admin-search-input" class="input-field admin-search mono"
+           placeholder="🔍 Search by name, email, or branch..." oninput="renderStudentsTable()">
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Branch</th>
+                <th>Units Completed</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="admin-students-body">
+            <tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+    import {
+        getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAQH4iY5DXjCBHkH_rLIjUJIN3YalDKnSs",
+        authDomain: "net-academy-pro.firebaseapp.com",
+        databaseURL: "https://net-academy-pro-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "net-academy-pro",
+        storageBucket: "net-academy-pro.firebasestorage.app",
+        messagingSenderId: "146054786807",
+        appId: "1:146054786807:web:dbc57bbb94c3a072386df2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    window.fbDB = db;
+    window.fbRef = ref;
+    window.fbGet = get;
+    window.fbSet = set;
+    window.fbRemove = remove;
+    window.fbAuth = auth;
+    window.fbSignIn = signInWithEmailAndPassword;
+    window.fbSignOut = () => signOut(auth);
+    window.fbOnAuthChange = (callback) => onAuthStateChanged(auth, callback);
+    window.dispatchEvent(new Event('firebase-ready'));
+</script>
+<script src="admin.js"></script>
+</body>
+</html>

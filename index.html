@@ -21,7 +21,7 @@
             <!-- Full Name -->
             <div class="form-group" id="name-group">
                 <label for="student-name" class="mono"><i class="fa-solid fa-user"></i> Full Name</label>
-                <input type="text" id="student-name" class="input-field" placeholder="Ziad Hussien" autocomplete="name" required />
+                <input type="text" id="student-name" class="input-field" placeholder="John Doe" autocomplete="name" required />
             </div>
 
             <!-- Email Address -->
@@ -46,9 +46,9 @@
 
             <!-- Branch Selection -->
             <div class="form-group" id="branch-group">
-                <label for="student-branch" class="mono"><i class="fa-solid fa-building-columns"></i> School Branch</label>
+                <label for="student-branch" class="mono"><i class="fa-solid fa-building-columns"></i> Academy Branch</label>
                 <select id="student-branch" class="input-field" style="background: #0d1117; color: #fff;" required>
-                    <option value="" disabled selected>Select School Branch.</option>
+                    <option value="" disabled selected>Select Academy Branch...</option>
                     <option value="Cairo Branch">Cairo Branch</option>
                     <option value="Giza Branch">Giza Branch</option>
                     <option value="Alexandria Branch">Alexandria Branch</option>
@@ -98,13 +98,31 @@
         <div class="brand-dot"></div>
         Net Academy Pro
     </div>
-    <div class="user-info mono" id="user-display" style="display: none;">
-        <i class="fa-solid fa-user-circle"></i> <span id="current-user-name"></span> (<span id="current-user-branch"></span>)
-        <button class="filter-btn" onclick="logoutStudent()" style="padding: 4px 10px; font-size: 0.75rem; margin-left: 10px;">
-            <i class="fa-solid fa-right-from-bracket"></i> Logout
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <!-- زرار الترجمة الفورية للمحتوى (إنجليزي <-> عربي) -->
+        <button id="translate-toggle-btn" class="filter-btn mono" onclick="toggleTranslation()" style="padding: 6px 14px; font-size: 0.78rem;">
+            <i class="fa-solid fa-language"></i> <span id="translate-btn-label">العربية</span>
         </button>
+        <div class="user-info mono" id="user-display" style="display: none;">
+            <i class="fa-solid fa-user-circle"></i> <span id="current-user-name"></span> (<span id="current-user-branch"></span>)
+            <button class="filter-btn" onclick="logoutStudent()" style="padding: 4px 10px; font-size: 0.75rem; margin-left: 10px;">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </div>
     </div>
 </header>
+
+<!-- عنصر ويدجت Google Translate (مخفي - بنشغّله من زرارنا المخصص بدل واجهته الافتراضية) -->
+<div id="google_translate_element" style="display: none;"></div>
+<script type="text/javascript">
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement(
+            { pageLanguage: 'en', includedLanguages: 'ar', autoDisplay: false },
+            'google_translate_element'
+        );
+    }
+</script>
+<script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
 <div class="container">
     
@@ -167,6 +185,49 @@
                     <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No students have completed a full unit yet.</td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- FEEDBACK SECTION -->
+        <div class="feedback-section">
+            <h3 class="mono" style="color: var(--primary-accent); margin-bottom: 6px;">
+                <i class="fa-solid fa-comment-dots"></i> Send Feedback
+            </h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px;">
+                Found a mistake, have a suggestion, or need help with a lesson? Let us know.
+            </p>
+
+            <div class="form-group">
+                <label for="feedback-name" class="mono"><i class="fa-solid fa-user"></i> Your Name</label>
+                <input type="text" id="feedback-name" class="input-field" placeholder="Your name" />
+            </div>
+
+            <div class="form-group">
+                <label for="feedback-email" class="mono"><i class="fa-solid fa-envelope"></i> Your Email</label>
+                <input type="email" id="feedback-email" class="input-field" placeholder="you@example.com" />
+            </div>
+
+            <div class="form-group">
+                <label class="mono"><i class="fa-solid fa-star"></i> Rating (optional)</label>
+                <div class="star-rating mono" id="feedback-star-rating">
+                    <i class="fa-regular fa-star star-icon" data-value="1" onclick="setFeedbackRating(1)"></i>
+                    <i class="fa-regular fa-star star-icon" data-value="2" onclick="setFeedbackRating(2)"></i>
+                    <i class="fa-regular fa-star star-icon" data-value="3" onclick="setFeedbackRating(3)"></i>
+                    <i class="fa-regular fa-star star-icon" data-value="4" onclick="setFeedbackRating(4)"></i>
+                    <i class="fa-regular fa-star star-icon" data-value="5" onclick="setFeedbackRating(5)"></i>
+                    <span id="feedback-rating-label" style="margin-left: 10px; color: var(--text-muted); font-size: 0.8rem;">Not rated</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="feedback-message" class="mono"><i class="fa-solid fa-pen"></i> Your Message</label>
+                <textarea id="feedback-message" class="input-field" rows="5" placeholder="Write your feedback here..."></textarea>
+            </div>
+
+            <button id="feedback-submit-btn" class="btn mono" style="margin-top: 6px;" onclick="sendFeedback()">
+                <i class="fa-solid fa-paper-plane"></i> Send Feedback
+            </button>
+
+            <div id="feedback-status" class="mono" style="display: none; margin-top: 14px; font-size: 0.85rem;"></div>
         </div>
     </div>
 
@@ -249,11 +310,17 @@
 
 </div>
 
+<!-- EmailJS - إرسال الفيدباك مباشرة على الإيميل -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+    emailjs.init({ publicKey: "HRdxuGP_lMQObQeZT" });
+</script>
+
 <!-- Firebase (Realtime Database) - قاعدة بيانات مشتركة لكل الطلبة -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
     import {
-        getDatabase, ref, get, set, update, push, onValue
+        getDatabase, ref, get, set, update, push, onValue, remove, increment
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
     const firebaseConfig = {
@@ -277,6 +344,8 @@
     window.fbUpdate = update;
     window.fbPush = push;
     window.fbOnValue = onValue;
+    window.fbRemove = remove;
+    window.fbIncrement = increment;
 
     // نطلق حدث عشان script.js يعرف إن Firebase بقى جاهز يشتغل بيه
     window.dispatchEvent(new Event('firebase-ready'));

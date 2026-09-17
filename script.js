@@ -35,6 +35,31 @@ function sanitizeEmailKey(email) {
     return email.replace(/\./g, ',').replace(/[#$\[\]]/g, '_');
 }
 
+// ===== الترجمة الفورية (Google Translate) =====
+let isTranslatedToArabic = false;
+function toggleTranslation() {
+    const select = document.querySelector('#google_translate_element select.goog-te-combo');
+    if (!select) {
+        alert('⏳ الترجمة لسه بتتجهز، استنى ثانية وجرّب تاني.');
+        return;
+    }
+
+    const btnLabel = document.getElementById('translate-btn-label');
+
+    if (!isTranslatedToArabic) {
+        select.value = 'ar';
+        select.dispatchEvent(new Event('change'));
+        isTranslatedToArabic = true;
+        btnLabel.innerText = 'English';
+    } else {
+        // الرجوع للنص الأصلي (الخيار الأول في القايمة بيبقى "Show original" افتراضيًا)
+        select.value = select.options[0].value;
+        select.dispatchEvent(new Event('change'));
+        isTranslatedToArabic = false;
+        btnLabel.innerText = 'العربية';
+    }
+}
+
 // بينتظر لحد ما Firebase (اللي بيتحمّل في module منفصل) يخلص تجهيز نفسه
 function waitForFirebase() {
     return new Promise(resolve => {
@@ -74,6 +99,11 @@ async function checkActiveSession() {
         if (userDisplay) userDisplay.style.display = 'flex';
         if (modal) modal.style.display = 'none';
         await loadUserProgress();
+        // نملّي خانات الفيدباك تلقائيًا ببيانات الطالب عشان ميكتبهاش كل مرة
+        const fbName = document.getElementById('feedback-name');
+        const fbEmail = document.getElementById('feedback-email');
+        if (fbName && !fbName.value) fbName.value = currentStudent;
+        if (fbEmail && !fbEmail.value) fbEmail.value = currentEmail;
     } else {
         if (modal) modal.style.display = 'flex';
         if (userDisplay) userDisplay.style.display = 'none';
@@ -142,8 +172,107 @@ function applySavedUnitProgress(unit) {
 document.addEventListener('DOMContentLoaded', () => {
     checkActiveSession();
     loadAppData();
-    waitForFirebase().then(initLeaderboardListeners);
+    waitForFirebase().then(() => {
+        initLeaderboardListeners();
+        trackSiteVisit();
+    });
 });
+
+// تسجيل زيارة جديدة للموقع (عداد بسيط - كل تحميل صفحة يزوّد العدد بواحد
+// بشكل ذرّي (Atomic) عن طريق increment عشان ميحصلش تضارب لو فيه زوار كتير
+// في نفس اللحظة)
+function trackSiteVisit() {
+    if (!window.fbDB) return;
+    window.fbUpdate(window.fbRef(window.fbDB, 'stats'), { totalVisits: window.fbIncrement(1) })
+        .catch(err => console.error('Visit tracking failed:', err));
+}
+
+// ===== إرسال الفيدباك عن طريق EmailJS =====
+// الرسالة بتتبعت مباشرة على الإيميل، وكمان بتتحفظ نسخة منها في Firebase
+// كنسخة احتياطية (لو الإيميل فشل لأي سبب، الرسالة متضيعش)
+let selectedFeedbackRating = 0;
+
+function setFeedbackRating(value) {
+    selectedFeedbackRating = value;
+    document.querySelectorAll('#feedback-star-rating .star-icon').forEach(star => {
+        const starValue = Number(star.dataset.value);
+        star.classList.toggle('filled', starValue <= value);
+        star.className = star.className.replace(/fa-(regular|solid)/, starValue <= value ? 'fa-solid' : 'fa-regular');
+    });
+    document.getElementById('feedback-rating-label').innerText = `${value} / 5`;
+}
+
+function resetFeedbackRating() {
+    selectedFeedbackRating = 0;
+    document.querySelectorAll('#feedback-star-rating .star-icon').forEach(star => {
+        star.classList.remove('filled');
+        star.className = star.className.replace('fa-solid', 'fa-regular');
+    });
+    document.getElementById('feedback-rating-label').innerText = 'Not rated';
+}
+
+async function sendFeedback() {
+    const nameInput = document.getElementById('feedback-name').value.trim();
+    const emailInput = document.getElementById('feedback-email').value.trim();
+    const messageInput = document.getElementById('feedback-message').value.trim();
+    const statusBox = document.getElementById('feedback-status');
+    const submitBtn = document.getElementById('feedback-submit-btn');
+
+    function showStatus(text, type) {
+        statusBox.style.display = 'block';
+        statusBox.className = 'mono ' + type;
+        statusBox.innerHTML = text;
+    }
+
+    if (!nameInput) { showStatus('⚠️ من فضلك اكتب اسمك.', 'error'); return; }
+    if (!emailInput || !emailInput.includes('@')) { showStatus('⚠️ من فضلك اكتب بريد إلكتروني صحيح.', 'error'); return; }
+    if (!messageInput) { showStatus('⚠️ من فضلك اكتب رسالتك.', 'error'); return; }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+    statusBox.style.display = 'none';
+
+    // نسخة احتياطية في Firebase (بتتم بالتوازي ومش بتوقف الإرسال لو فشلت)
+    if (window.fbDB && window.fbPush) {
+        window.fbPush(window.fbRef(window.fbDB, 'feedback'), {
+            name: nameInput,
+            email: emailInput,
+            message: messageInput,
+            rating: selectedFeedbackRating || null,
+            student: currentStudent || '(not logged in)',
+            branch: currentBranch || '-',
+            sentAt: new Date().toISOString()
+        }).catch(err => console.error('Feedback backup to Firebase failed:', err));
+    }
+
+    try {
+        await emailjs.send('service_d7907c4', 'template_a0ic8op', {
+            // الأسماء دي مستخدمة في جسم الرسالة (Content) في الـ template
+            from_name: nameInput,
+            from_email: emailInput,
+            reply_to: emailInput,
+            message: messageInput,
+            student_branch: currentBranch || '-',
+            // ودي مستخدمة في الـ Subject و From Name و Reply To في إعدادات الـ template
+            name: nameInput,
+            email: emailInput,
+            branch: currentBranch || 'Guest',
+            rating: selectedFeedbackRating ? `${selectedFeedbackRating} / 5 ⭐` : 'Not rated'
+        });
+
+        showStatus('✅ تم إرسال رسالتك بنجاح. شكرًا لك!', 'success');
+        document.getElementById('feedback-name').value = '';
+        document.getElementById('feedback-email').value = '';
+        document.getElementById('feedback-message').value = '';
+        resetFeedbackRating();
+    } catch (err) {
+        console.error('EmailJS send failed:', err);
+        showStatus('⚠️ حصلت مشكلة أثناء الإرسال. تأكد من اتصال الإنترنت وحاول تاني.', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Feedback';
+    }
+}
 
 // Fetch Curriculum and Questions Data
 // ملحوظة: تحميل الوحدات (units) والأسئلة (questions) بقى منفصل عن بعض
