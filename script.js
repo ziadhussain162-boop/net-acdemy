@@ -390,7 +390,7 @@ async function handleAuthSubmit(event) {
             return;
         }
         if (!branchVal) {
-            alert("⚠️ من فضلك اختر فرع الأكاديمي من القائمة.");
+            alert("⚠️ من فضلك اختر فرع المدرسة من القائمة.");
             return;
         }
     }
