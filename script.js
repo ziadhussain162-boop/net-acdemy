@@ -369,20 +369,7 @@ async function handleAuthSubmit(event) {
     const passError = document.getElementById('pass-error');
     const submitBtn = document.getElementById('submitBtn');
 
-    // تحقق واضح من الإيميل (كان معتمد على تحقق المتصفح التلقائي بس، وده
-    // بيتعطّل دلوقتي بـ novalidate عشان نضمن ظهور رسالة واضحة دايمًا)
-    if (!emailInput || !emailInput.includes('@')) {
-        alert("⚠️ من فضلك اكتب بريد إلكتروني صحيح.");
-        return;
-    }
-    if (!passInput) {
-        alert("⚠️ من فضلك اكتب كلمة المرور.");
-        return;
-    }
-
-    // تحقق واضح من الاسم والفرع في وضع التسجيل، مع رسالة تنبيه بدل الاعتماد
-    // على تحقق المتصفح الصامت (اللي كان ممكن ميوريش أي رد فعل ظاهر للمستخدم)
-    if (isRegisterMode) {
+if (isRegisterMode) {
         const nameVal = document.getElementById('student-name').value.trim();
         const branchVal = document.getElementById('student-branch').value;
         if (!nameVal) {
@@ -394,6 +381,20 @@ async function handleAuthSubmit(event) {
             return;
         }
     }
+
+
+    // تحقق واضح من الإيميل (كان معتمد على تحقق المتصفح التلقائي بس، وده
+    // بيتعطّل دلوقتي بـ novalidate عشان نضمن ظهور رسالة واضحة دايمًا)
+    if (!emailInput || !emailInput.includes('@')) {
+        alert("⚠️ من فضلك اكتب بريد إلكتروني صحيح.");
+        return;
+    }
+    if (!passInput) {
+        alert("⚠️ من فضلك اكتب كلمة المرور.");
+        return;
+    }
+
+    
 
     // شرط تعقيد الباسورد يتفحص فقط عند إنشاء حساب جديد
     if (isRegisterMode && !validateComplexPassword(passInput)) {
